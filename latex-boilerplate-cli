@@ -1,4 +1,73 @@
 #!/usr/bin/env python3
 from PyInquirer import prompt, style_from_dict, Token
 from pyfiglet import Figlet
+from dotenv import load_dotenv
+from datetime import datetime
 import os
+
+load_dotenv()
+
+style = style_from_dict({
+    Token.Separator: '#46ae39',
+    Token.QuestionMark: '#46ae39 bold',
+    Token.Selected: '#46ae39',  # default
+    Token.Pointer: '#46ae39 bold',
+    Token.Instruction: '',  # default
+    Token.Answer: '#fff bold',
+    Token.Question: '',
+})
+
+questions = [
+    {
+        'type': 'list',
+        'name': 'template',
+        'message': 'Template:',
+        'choices': ['Assignment'],
+        'filter': lambda val: val.lower()
+    },
+    {
+        'type': 'input',
+        'name': 'title',
+        'message': 'Title:',
+        'validate': lambda val: len(val) > 0
+    },
+    {
+        'type': 'input',
+        'name': 'subtitle',
+        'message': 'Subtitle:',
+        'validate': lambda val: len(val) > 0
+    },
+    {
+        'type': 'input',
+        'name': 'author',
+        'message': 'Author:',
+        'default': os.getenv('CLI_AUTHOR', ''),
+        'validate': lambda val: len(val) > 0
+    },
+    {
+        'type': 'input',
+        'name': 'date',
+        'message': 'Date:',
+        'default': datetime.today().strftime('%Y-%m-%d'),
+        'validate': lambda val: len(val) > 0
+    },
+    {
+        'type': 'input',
+        'name': 'path',
+        'message': 'Path:',
+        'default': os.path.dirname(os.getcwd()),
+        'validate': lambda val: len(val) > 0
+    },
+    {
+        'type': 'confirm',
+        'name': 'confirm',
+        'message':  'Create a LaTeX file (.tex)?',
+        'default': False
+    },
+]
+
+print(Figlet(font='slant').renderText('LaTeX Boilerplate CLI'))
+
+answers = prompt(questions, style=style)
+
+print(answers)
