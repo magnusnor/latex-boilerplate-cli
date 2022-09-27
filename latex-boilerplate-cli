@@ -3,7 +3,9 @@ from PyInquirer import prompt, style_from_dict, Token
 from pyfiglet import Figlet
 from dotenv import load_dotenv
 from datetime import datetime
+from PIL import Image
 import os
+import re
 
 load_dotenv()
 
@@ -22,7 +24,7 @@ questions = [
         'type': 'list',
         'name': 'template',
         'message': 'Template:',
-        'choices': ['Assignment'],
+        'choices': ['Assignment', "Report"],
         'filter': lambda val: val.lower()
     },
     {
@@ -57,13 +59,20 @@ questions = [
         'type': 'input',
         'name': 'path',
         'message': 'Path:',
-        'default': os.getenv('CLI_PATH', os.path.dirname(os.getcwd())),
+        'default': os.getenv('CLI_PATH', os.getcwd()),
+        'validate': lambda val: len(val) > 0
+    },
+    {
+        'type': 'input',
+        'name': 'workspace',
+        'message': 'Workspace:',
+        'default': os.getenv('CLI_WORKSPACE', 'latex-workspace'),
         'validate': lambda val: len(val) > 0
     },
     {
         'type': 'confirm',
         'name': 'confirm',
-        'message':  'Create a LaTeX file (.tex)?',
+        'message':  'Are you sure you want to create a LaTeX workspace?',
         'default': False
     },
 ]
@@ -72,4 +81,57 @@ print(Figlet(font='slant').renderText('LaTeX Boilerplate CLI'))
 
 answers = prompt(questions, style=style)
 
-print(answers)
+TEMPLATE = answers.get('template')
+PATH = answers.get('path')
+WORKSPACE = answers.get('workspace')
+
+if answers['confirm']:
+    with open(f'templates/{TEMPLATE}/boilerplate.tex') as template_boilerplate_file:
+        boilerplate = template_boilerplate_file.read()
+        # Sort dictionary to ensure no regex conflict with partial matches
+        for key, value in sorted(answers.items()):
+            key = key.upper()
+            regex = rf"\b{re.escape(key)}\b"
+            if re.search(regex, boilerplate):
+                boilerplate = re.sub(key, value, boilerplate)
+        
+        # Generate workspace folders
+        if not os.path.exists(f'{PATH}/{WORKSPACE}'):
+            os.makedirs(f'{PATH}/{WORKSPACE}')
+            if not os.path.exists(f'{PATH}/{WORKSPACE}/Appendices'):
+                os.makedirs(f'{PATH}/{WORKSPACE}/Appendices')
+            if not os.path.exists(f'{PATH}/{WORKSPACE}/Sections'):
+                os.makedirs(f'{PATH}/{WORKSPACE}/Sections')
+            if not os.path.exists(f'{PATH}/{WORKSPACE}/Images'):
+                os.makedirs(f'{PATH}/{WORKSPACE}/Images')
+
+        # Read template .sty file and write it to the workspace
+        with open(f'templates/{TEMPLATE}/packages.sty') as template_packages_file:
+            with open(f'{PATH}/{WORKSPACE}/packages.sty', 'w') as packages_file:
+                packages_file.write(template_packages_file.read())
+        
+        # Read template .bib file and write it to the workspace
+        with open(f'templates/{TEMPLATE}/references.bib') as template_references_file:
+            with open(f'{PATH}/{WORKSPACE}/references.bib', 'w') as references_file:
+                references_file.write(template_references_file.read())
+        
+        # Read template title .tex file and write it to the workspace
+        if TEMPLATE == 'report':
+            with open(f'templates/{TEMPLATE}/title.tex') as template_title_file:
+                title = template_title_file.read()
+                # Sort dictionary to ensure no regex conflict with partial matches
+                for key, value in sorted(answers.items()):
+                    key = key.upper()
+                    regex = rf"\b{re.escape(key)}\b"
+                    if re.search(regex, title):
+                        title = re.sub(key, value, title)
+                with open(f'{PATH}/{WORKSPACE}/title.tex', 'w') as title_file:
+                    title_file.write(title)
+            
+            # Read NTNU logo file and write it to the workspace
+            image = Image.open(f'templates/{TEMPLATE}/NTNU_logo.png')
+            image.save(f'{PATH}/{WORKSPACE}/Images/NTNU_logo.png')
+
+        # Write updated boilerplate .tex file to the workspace
+        with open(f'{PATH}/{WORKSPACE}/main.tex', 'w') as main_file:
+            main_file.write(boilerplate)
