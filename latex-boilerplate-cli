@@ -29,12 +29,14 @@ questions = [
         'type': 'input',
         'name': 'title',
         'message': 'Title:',
+        'default': os.getenv('CLI_TITLE', ''),
         'validate': lambda val: len(val) > 0
     },
     {
         'type': 'input',
         'name': 'subtitle',
         'message': 'Subtitle:',
+        'default': os.getenv('CLI_SUBTITLE', ''),
         'validate': lambda val: len(val) > 0
     },
     {
@@ -48,14 +50,14 @@ questions = [
         'type': 'input',
         'name': 'date',
         'message': 'Date:',
-        'default': datetime.today().strftime('%Y-%m-%d'),
+        'default': os.getenv('CLI_DATE', datetime.today().strftime('%Y-%m-%d')),
         'validate': lambda val: len(val) > 0
     },
     {
         'type': 'input',
         'name': 'path',
         'message': 'Path:',
-        'default': os.path.dirname(os.getcwd()),
+        'default': os.getenv('CLI_PATH', os.path.dirname(os.getcwd())),
         'validate': lambda val: len(val) > 0
     },
     {
